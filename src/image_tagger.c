@@ -17,7 +17,7 @@
   that the game is completed and prompting the players to play again.
   If both the players agree to play again, the process repeats with a new image.
 
-  for more information, please refer to project_description.pdf
+  for more information, please refer to resources/project_description.pdf
 
   #### RUNNING COMMAND ####
   Run server: ./image_tagger <server_ip> <port_number>

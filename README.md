@@ -16,7 +16,7 @@ Once the goal is achieved, the game ends; the server sends a web page indicating
 that the game is completed and prompting the players to play again.
 If both the players agree to play again, the process repeats with a new image.
 
-For detailed description please look at project_description.pdf
+For detailed description please look at resources/project_description.pdf
 
 ## COMMAND (Linux)
 
