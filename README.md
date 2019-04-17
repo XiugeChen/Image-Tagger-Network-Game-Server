@@ -18,24 +18,33 @@ If both the players agree to play again, the process repeats with a new image.
 
 For detailed description please look at resources/project_description.pdf
 
-## COMMAND (Linux)
+## EXECUTION COMMAND (Linux)
 
 To compile:
+
 `cd code`
+
 `make all`
 
 To execute after compile:
+
 `cd code/bin`
+
 `./image_tagger <server_ip> <port_number>`
 
 To clean up executable and object files and directories:
+
 `cd code`
+
 `make clean`
 
 ## ATTRIBUTION
+Xiuge Chen
 
 xiugec@student.unimelb.edu.au
+
 Subject: COMP30023 Computer Systems
+
 University of Melbourne
 
 Some code bring ideas from lab5/6 of comp30023

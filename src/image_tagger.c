@@ -56,10 +56,8 @@ int main(int argc, char * argv[]) {
 
   printf("receive %s, %s\n", argv[1], argv[2]);
 
-  int port = atoi(argv[1]);
-  runHttpServer(argv[0], port);
-
-  printf("connect successfully: %s, %s\n", argv[1], argv[2]);
+  int port = atoi(argv[2]);
+  run_http_server(argv[1], port);
 
   return 0;
 }

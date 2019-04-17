@@ -15,20 +15,27 @@
 
 #include "socket_manage.h"
 
-int create_socket(char* server, int port) {
+int create_tcp_socket(char* server, int port) {
   int sockfd = 0;
 
-  sockfd = socket(SOCKET_DOMAIN, SOCKET_TYPE, SOCKET_PROTOCOL);
-
-  if (sockfd < 0) {
+  // create socket based on configuration
+  sockfd = socket(AF_INET, SOCK_STREAM, 0);
+  if (sockfd <= 0) {
     perror("socket creation failure");
     exit(EXIT_FAILURE);
   }
 
-  printf("socketfd: %d\n", sockfd);
+  // reuse the socket if possible
+  int const reuse = 1;
+  if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(int)) < 0) {
+      perror("set socket option to reuse address failure");
+      exit(EXIT_FAILURE);
+  }
 
   return sockfd;
 }
+
+
 
 void close_socket(int sockfd) {
   close(sockfd);
