@@ -23,7 +23,7 @@ void run_http_server(char* server, int port) {
 
   sockfd = create_tcp_socket(server, port);
 
-  initialise_addr(&serv_addr, server, port);
+  init_addr(&serv_addr, server, port);
 
   bind_addr_sock(sockfd, &serv_addr, sizeof(serv_addr));
 
@@ -33,14 +33,78 @@ void run_http_server(char* server, int port) {
 }
 
 void execute_server(int sockfd) {
-  listen(sockfd, 1);
+  if (listen(sockfd, BACKLOG) == -1) {
+        perror("listen to socket failure");
+        exit(1);
+  }
+
+  // initialise an active file descriptors set
+  fd_set masterfds;
+  init_file_des(sockfd, &masterfds);
+  int maxfd = sockfd;
 
   while(1) {
-    break;
+    // monitor file descriptors
+    fd_set readfds = masterfds;
+    if (select(FD_SETSIZE, &readfds, NULL, NULL, NULL) < 0) {
+        perror("select failure");
+        exit(EXIT_FAILURE);
+    }
+
+    // loop all possible descriptor
+    for (int i = 0; i <= maxfd; ++i) {
+      // determine if the current file descriptor is active
+      if (FD_ISSET(i, &readfds)) {
+        // create new socket if there is new incoming connection request
+        if (i == sockfd) {
+          struct sockaddr_in cliaddr;
+          socklen_t clilen = sizeof(cliaddr);
+          int newsockfd = accept(sockfd, (struct sockaddr *)&cliaddr, &clilen);
+
+          if (newsockfd < 0)
+              perror("accept faliure, keep running");
+          else {
+            // add the socket to the set
+            FD_SET(newsockfd, &masterfds);
+            // update the maximum tracker
+            if (newsockfd > maxfd)
+                maxfd = newsockfd;
+
+            // print out the IP and the socket number
+            char ip[INET_ADDRSTRLEN];
+            printf(
+                "new connection from %s on socket %d\n",
+                // convert to human readable string
+                inet_ntop(cliaddr.sin_family, &cliaddr.sin_addr, ip, INET_ADDRSTRLEN),
+                newsockfd
+            );
+          }
+        } else if (!handle_http_request(i)) {
+          close(i);
+          FD_CLR(i, &masterfds);
+        }
+      }
+    }
   }
 }
 
-void initialise_addr(struct sockaddr_in* addr_p, char* server, int port) {
+static bool handle_http_request(int sockfd) {
+  // try to read the request
+  char buff[2049];
+
+  int n = read(sockfd, buff, 2049);
+  if (n <= 0) {
+      if (n < 0)
+          perror("read");
+      else
+          printf("socket %d close the connection\n", sockfd);
+      return false;
+  }
+
+  return true;
+}
+
+void init_addr(struct sockaddr_in* addr_p, char* server, int port) {
   memset(addr_p, 0, sizeof(*addr_p));
 
   addr_p->sin_family = AF_INET;
@@ -58,4 +122,9 @@ void bind_addr_sock(int sockfd, struct sockaddr_in* addr_p, int size_addr) {
       perror("bind socket to server address failure");
       exit(EXIT_FAILURE);
   }
+}
+
+void init_file_des(int sockfd, fd_set* masterfds) {
+    FD_ZERO(masterfds);
+    FD_SET(sockfd, masterfds);
 }

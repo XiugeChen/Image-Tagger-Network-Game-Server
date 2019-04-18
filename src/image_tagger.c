@@ -33,6 +33,7 @@
   University of Melbourne
 
   Some code bring ideas from lab5/6 of comp30023
+  and Beej's Guide to Network Programming http://www.beej.us/guide/bgnet/html/multi/index.html
 */
 
 #include <stdbool.h>
@@ -53,8 +54,6 @@ int main(int argc, char * argv[]) {
   if (!checkArgs(argc, argv)) {
     return 0;
   }
-
-  printf("receive %s, %s\n", argv[1], argv[2]);
 
   int port = atoi(argv[2]);
   run_http_server(argv[1], port);

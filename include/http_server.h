@@ -15,10 +15,13 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
 #include "socket_manage.h"
+
+#define BACKLOG 2
 
 /*
 
@@ -31,14 +34,24 @@ void run_http_server(char* server, int port);
 void execute_server(int sockfd);
 
 /*
+
+*/
+static bool handle_http_request(int sockfd);
+
+/*
   create and initialise address we will listen on
   Input: server address information(pointer of struct sockaddr_in), server address(1D char array), port number(int)
 */
-void initialise_addr(struct sockaddr_in* serv_addr_p, char* server, int port);
+void init_addr(struct sockaddr_in* serv_addr_p, char* server, int port);
 
 /*
   bind address to socket
 */
 void bind_addr_sock(int sockfd, struct sockaddr_in* addr_p, int size_addr);
+
+/*
+  initialise an active file descriptors set
+*/
+void init_file_des(int sockfd, fd_set* masterfds);
 
 #endif

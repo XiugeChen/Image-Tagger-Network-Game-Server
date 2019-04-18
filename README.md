@@ -1,3 +1,5 @@
+[Beej's Guide to Network Programming]: http://www.beej.us/guide/bgnet/html/multi/index.html
+
 ## DESCRIPTION
 
 Project 1 for COMP30023 Computer System at University of Melbourne
@@ -47,4 +49,4 @@ Subject: COMP30023 Computer Systems
 
 University of Melbourne
 
-Some code bring ideas from lab5/6 of comp30023
+Some code bring ideas from lab5/6 of comp30023 and [Beej's Guide to Network Programming]
