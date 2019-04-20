@@ -35,8 +35,6 @@ int create_tcp_socket(char* server, int port) {
   return sockfd;
 }
 
-
-
 void close_socket(int sockfd) {
   close(sockfd);
 }

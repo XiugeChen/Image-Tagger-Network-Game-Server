@@ -6,8 +6,8 @@ BIN_DIR = bin
 CC = gcc
 CFLAGS = -std=c99 -O3 -Wall -Wpedantic -I$(IDIR)
 
-_DEPS = http_server.h socket_manage.h
-_OBJ = http_server.o socket_manage.o image_tagger.o
+_DEPS = http_server.h socket_manage.h game_event_handler.h player_manage.h
+_OBJ = http_server.o socket_manage.o game_event_handler.o player_manage.o image_tagger.o
 
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))

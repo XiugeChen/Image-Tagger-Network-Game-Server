@@ -18,25 +18,23 @@
 #include <stdbool.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/select.h>
 
 #include "socket_manage.h"
+#include "player_manage.h"
+#include "game_event_handler.h"
 
 #define BACKLOG 2
 
 /*
-
+  run the server on specific server and port
 */
 void run_http_server(char* server, int port);
 
 /*
-
+  execute a server on listening a specific socket
 */
 void execute_server(int sockfd);
-
-/*
-
-*/
-static bool handle_http_request(int sockfd);
 
 /*
   create and initialise address we will listen on

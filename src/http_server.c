@@ -27,15 +27,23 @@ void run_http_server(char* server, int port) {
 
   bind_addr_sock(sockfd, &serv_addr, sizeof(serv_addr));
 
+  printf("image_tagger server is now running at IP: %s on port %d\n", server, port);
+
   execute_server(sockfd);
 
   close_socket(sockfd);
 }
 
 void execute_server(int sockfd) {
+  // players of the game
+  struct Player players[NUM_PLAYER];
+  for (int i = 0; i < NUM_PLAYER; i++) {
+    init_player(&players[i]);
+  }
+
   if (listen(sockfd, BACKLOG) == -1) {
-        perror("listen to socket failure");
-        exit(1);
+    perror("listen to socket failure");
+    exit(1);
   }
 
   // initialise an active file descriptors set
@@ -79,29 +87,19 @@ void execute_server(int sockfd) {
                 newsockfd
             );
           }
-        } else if (!handle_http_request(i)) {
-          close(i);
+        }
+        // read and process event from client, if client quit, initialise associated player
+        else if (!process_event(i, players)) {
+          struct Player* player = get_player(i, players);
+          if (player != NULL)
+            init_player(player);
+
+          close_socket(i);
           FD_CLR(i, &masterfds);
         }
       }
     }
   }
-}
-
-static bool handle_http_request(int sockfd) {
-  // try to read the request
-  char buff[2049];
-
-  int n = read(sockfd, buff, 2049);
-  if (n <= 0) {
-      if (n < 0)
-          perror("read");
-      else
-          printf("socket %d close the connection\n", sockfd);
-      return false;
-  }
-
-  return true;
 }
 
 void init_addr(struct sockaddr_in* addr_p, char* server, int port) {
