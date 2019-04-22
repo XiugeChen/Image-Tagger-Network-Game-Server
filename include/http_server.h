@@ -22,7 +22,7 @@
 
 #include "socket_manage.h"
 #include "player_manage.h"
-#include "game_event_handler.h"
+#include "game_manage.h"
 
 #define BACKLOG 2
 
@@ -31,6 +31,7 @@
 */
 void run_http_server(char* server, int port);
 
+// HELPER FUNCTIONS
 /*
   execute a server on listening a specific socket
 */
