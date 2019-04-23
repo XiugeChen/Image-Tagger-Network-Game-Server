@@ -122,7 +122,6 @@ bool send_html_http(int sockfd, char* html_addr, char* header_replace_str, char*
     perror("send html header http");
     return false;
   }
-
   if (!send_body_http(sockfd, html_addr, body_replace_str, body_replacement)) {
     perror("send html body http");
     return false;

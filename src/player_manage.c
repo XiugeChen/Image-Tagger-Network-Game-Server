@@ -25,12 +25,30 @@ struct Player* get_player(int sockfd, struct Player* players) {
     }
   }
 
-  return NULL;
+  if (get_quit_player(players) != NULL)
+    return get_quit_player(players);
+
+  return get_disconnect_player(players);
+}
+
+void players_quit(struct Player* players) {
+  for (int i = 0; i < NUM_PLAYER; i++)
+    players[i].status = QUIT;
 }
 
 struct Player* get_disconnect_player(struct Player* players) {
   for (int i = 0; i < NUM_PLAYER; i++) {
     if (players[i].status == DISCONNECT) {
+      return &players[i];
+    }
+  }
+
+  return NULL;
+}
+
+struct Player* get_quit_player(struct Player* players) {
+  for (int i = 0; i < NUM_PLAYER; i++) {
+    if (players[i].status == QUIT) {
       return &players[i];
     }
   }

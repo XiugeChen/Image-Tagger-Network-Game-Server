@@ -45,11 +45,16 @@ bool register_event(int sockfd, char* info, struct Player* players);
 /*
   start page display
 */
-bool start_event(int sockfd, struct Player* player);
+bool start_event(int sockfd, struct Player* players);
+
+/*
+  player quit, gameover page display
+*/
+bool quit_event(int sockfd, struct Player* players);
 
 /*
   cant play(join game) page display
 */
-bool cant_play_event(int sockfd);
+bool cant_play_event(int sockfd, struct Player* players);
 
 #endif

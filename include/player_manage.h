@@ -24,7 +24,8 @@ typedef enum
     DISCONNECT,
     UNREGISTER,
     UNREADY,
-    READY
+    READY,
+    QUIT
 } PLAYER_STATUS;
 
 struct Player {
@@ -40,12 +41,25 @@ void init_player(struct Player* players);
 
 /*
   get a player from the players array based on a specific socket fd, NULL if nothing found
+  if no player associated with this client(client might close connnection accidentally)
+  try to continue client request if there is avaliable player(first quit, then disconnect player)
 */
 struct Player* get_player(int sockfd, struct Player* players);
 
 /*
+  once one player quit the game, also make all other players quit
+*/
+void players_quit(struct Player* players);
+
+// HELPER FUNCTION
+/*
   get any disconnect player from the players array, NULL if nothing found
 */
 struct Player* get_disconnect_player(struct Player* players);
+
+/*
+  get any quit player from the players array, NULL if nothing found
+*/
+struct Player* get_quit_player(struct Player* players);
 
 #endif

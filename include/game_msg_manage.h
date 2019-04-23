@@ -53,6 +53,11 @@ void get_body_http(char* request, char* content);
 void get_cookie_http(char* request, char* cookie);
 
 /*
+  get the header replacement from player username
+*/
+void get_header_replacement(char* replacement, char* username);
+
+/*
   send 404 http to client
 */
 bool send_404_http(int sockfd);
