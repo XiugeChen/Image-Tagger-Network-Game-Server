@@ -15,6 +15,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 
 #define NUM_PLAYER 2
 
@@ -25,7 +26,7 @@ typedef enum
     DISCONNECT,
     INTRO,
     START,
-    FIRST_TRUN,
+    PLAY,
     QUIT
 } PLAYER_STATUS;
 
@@ -48,7 +49,7 @@ void set_player_info(struct Player* player, int sockfd, char* username, PLAYER_S
 /*
   get a player from the players array based on a specific socket fd, NULL if nothing found
   if no player associated with this client(client might close connnection accidentally)
-  try to continue client request if there is avaliable player(first quit, then disconnect player)
+  try to continue client request if there is avaliable player(disconnect player)
 */
 struct Player* get_player(int sockfd, struct Player* players);
 
@@ -56,6 +57,11 @@ struct Player* get_player(int sockfd, struct Player* players);
   once one player quit the game, also make all other players quit
 */
 void players_quit(struct Player* players);
+
+/*
+  check whether all players are ready to play
+*/
+bool all_players_play(struct Player* players);
 
 // HELPER FUNCTION
 /*

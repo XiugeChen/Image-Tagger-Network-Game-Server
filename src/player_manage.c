@@ -44,6 +44,15 @@ void players_quit(struct Player* players) {
   }
 }
 
+bool all_players_play(struct Player* players) {
+  for (int i = 0; i < NUM_PLAYER; i++) {
+    if(players[i].status != PLAY)
+      return false;
+  }
+
+  return true;
+}
+
 struct Player* get_disconnect_player(struct Player* players) {
   for (int i = 0; i < NUM_PLAYER; i++) {
     if (players[i].status == DISCONNECT) {

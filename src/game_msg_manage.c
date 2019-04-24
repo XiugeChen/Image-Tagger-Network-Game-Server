@@ -95,6 +95,7 @@ void get_body_http(char* request, char* body) {
 }
 
 bool send_404_http(int sockfd) {
+  printf("send 404 to %d!\n", sockfd);
   if (write(sockfd, HTTP_404, HTTP_404_LENGTH) < 0) {
     perror("write");
     return false;
@@ -104,6 +105,7 @@ bool send_404_http(int sockfd) {
 }
 
 bool send_400_http(int sockfd) {
+  printf("send 400 to %d!\n", sockfd);
   if (write(sockfd, HTTP_400, HTTP_400_LENGTH) < 0) {
     perror("write");
     return false;
@@ -113,6 +115,8 @@ bool send_400_http(int sockfd) {
 }
 
 bool send_html_http(int sockfd, char* html_addr, char* header_replace_str, char* header_replacement, char* body_replace_str, char* body_replacement) {
+  printf("send 200 to %d!\n", sockfd);
+
   int extra_len = 0;
 
   if (body_replace_str != NULL && body_replacement != NULL)

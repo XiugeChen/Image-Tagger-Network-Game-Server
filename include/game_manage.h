@@ -24,23 +24,28 @@
 /*
   process an event read from a specific socket
 */
-bool process_event(struct Player* players, int sockfd);
+bool process_event(struct Player* players, int sockfd, int* round_num);
 
 // HELPER FUNCTIONS
 /*
-
+  transition rules when player is disconenct
 */
 bool process_player_discon(struct Player* player, METHOD method, char* url, char* cookie);
 
 /*
-
+  transition rules when player is at intro page
 */
 bool process_player_intro(struct Player* player, METHOD method, char* body);
 
 /*
-
+  transition rules when player is at start page
 */
-bool process_player_start(struct Player* player, METHOD method, char* body);
+bool process_player_start(struct Player* player, METHOD method, char* body, char* url, int round_num);
+
+/*
+  transition rules when player is at play page
+*/
+bool process_player_play(struct Player* player, METHOD method, char* body, int round_num, bool all_players_play);
 
 /*
   extract game event based on read content from client
@@ -56,6 +61,16 @@ bool intro_event(struct Player* player);
   start page display
 */
 bool start_event(struct Player* player);
+
+/*
+  play page display
+*/
+bool play_event(struct Player* player, int round_num);
+
+/*
+  discard player action when others not ready (not PLAY)
+*/
+bool discard_event(struct Player* player, int round_num);
 
 /*
   player quit, gameover page display

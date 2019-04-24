@@ -35,6 +35,9 @@ void run_http_server(char* server, int port) {
 }
 
 void execute_server(int sockfd) {
+  // each round is one picture (not the whole set of picture)
+  int round_num = 1;
+
   // players of the game
   struct Player players[NUM_PLAYER];
   for (int i = 0; i < NUM_PLAYER; i++) {
@@ -89,7 +92,7 @@ void execute_server(int sockfd) {
           }
         }
         // read and process event from client, if client quit, initialise associated player
-        else if (!process_event(players, i)) {
+        else if (!process_event(players, i, &round_num)) {
           struct Player* player = get_player(i, players);
           if (player != NULL)
             init_player(player);
