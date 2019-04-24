@@ -89,7 +89,7 @@ void execute_server(int sockfd) {
           }
         }
         // read and process event from client, if client quit, initialise associated player
-        else if (!process_event(i, players)) {
+        else if (!process_event(players, i)) {
           struct Player* player = get_player(i, players);
           if (player != NULL)
             init_player(player);

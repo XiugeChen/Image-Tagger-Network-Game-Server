@@ -15,7 +15,7 @@
 
 #include "game_manage.h"
 
-bool process_event(int sockfd, struct Player* players) {
+bool process_event(struct Player* players, int sockfd) {
   char url[BUFFER_SIZE];
   char body[BUFFER_SIZE];
   char cookie[BUFFER_SIZE];
@@ -26,82 +26,149 @@ bool process_event(int sockfd, struct Player* players) {
   if(!extract_info(sockfd, &method, url, body, cookie))
     return false;
 
-  // check whether player should quit game (gameover event), if so, send gameover page and close connection
-  if (player != NULL && player->status == QUIT) {
-    if (!quit_event(sockfd, players))
-      perror("gameover");
-
-    return false;
+  // ignore the request about favicon.ico
+  if (method == GET && strstr(url, "favicon.ico") != NULL) {
+    if (!send_404_http(sockfd)) {
+      perror("404");
+      return false;
+    }
+    return true;
   }
 
   printf("cookie: %s\n", cookie);
 
-  // different strategy based on differnet method
-  if (method == GET) {
-    printf("GET: %s\n", url);
+  if (player != NULL) {
+    if (*cookie == '\0')
+      set_player_info(player, sockfd, NULL, UNDEFINE);
+    else
+      set_player_info(player, sockfd, cookie, UNDEFINE);
 
+    switch(player->status) {
+      // check whether player should quit game (gameover event), if so, send gameover page and close connection
+      case QUIT:
+        if (!quit_event(player))
+          perror("gameover");
+
+        players_quit(players);
+        return false;
+
+      case DISCONNECT:
+        if (!process_player_discon(player, method, url, cookie)) {
+          perror("player_discon");
+          players_quit(players);
+          return false;
+        }
+        return true;
+
+      case INTRO:
+        if (!process_player_intro(player, method, body)) {
+          perror("player_intro");
+          players_quit(players);
+          return false;
+        }
+        return true;
+
+      case START:
+        if (!process_player_start(player, method, body)) {
+          perror("player_start");
+          players_quit(players);
+          return false;
+        }
+        return true;
+
+      default:
+        perror("player status");
+        players_quit(players);
+        return false;
+    }
+  }
+  else if (!cant_play_event(sockfd, cookie)) {
+    perror("cant_play");
+    return false;
+  }
+
+  return true;
+}
+
+bool process_player_discon(struct Player* player, METHOD method, char* url, char* cookie) {
+  if (method == GET) {
     if (*url == '\0') {
       // a new player coming event (intro_event)
-      if (*cookie == '\0') {
-        if (!intro_event(sockfd, players)) {
+      if (*cookie == '\0' || strcmp(cookie, "user=") == 0) {
+        if (!intro_event(player)) {
           perror("intro");
           return false;
         }
       }
-      // a new player using cookie to play (register_event)
+      // a new player using cookie to play (start_event)
       else if (strstr(cookie, "user=") != NULL) {
-        if (!register_event(sockfd, cookie, players)) {
-          perror("register");
-          return false;
-        }
-        if (!start_event(sockfd, players)) {
-          perror("start");
+        if (!start_event(player)) {
+          perror("intro");
           return false;
         }
       }
-      return true;
-    }
-
-    // ignore the request about favicon.ico
-    if (strstr(url, "favicon.ico") != NULL) {
-      if (!send_404_http(sockfd)) {
-        perror("404");
+      else {
+        perror("cookie");
         return false;
       }
-      return true;
     }
   }
   else if (method == POST) {
-    printf("POST: %s\n", body);
 
-    // new player register username event(register_event)
+  }
+  else {
+    // never used, just for completeness
+    fprintf(stderr, "no other methods supported");
+    return false;
+  }
+
+  return true;
+}
+
+bool process_player_intro(struct Player* player, METHOD method, char* body) {
+  if (method == POST) {
+    // new player register username event (start_event)
     if (strstr(body, "user=") != NULL) {
-      if (!register_event(sockfd, body, players)) {
-        perror("register");
-        return false;
+      if (strcmp(body, "user=") == 0) {
+        perror("username can't be empty");
+        intro_event(player);
       }
-      if (!start_event(sockfd, players)) {
-        perror("start");
-        return false;
+      else {
+        strcpy(player->username, body);
+        if (!start_event(player)) {
+          perror("intro");
+          return false;
+        }
       }
-      return true;
     }
+  }
+  else if (method == GET) {
+  }
+  else {
+    // never used, just for completeness
+    fprintf(stderr, "no other methods supported");
+    return false;
+  }
 
-    // player click quit (gameover page), send game over page and close connection
+  return true;
+}
+
+bool process_player_start(struct Player* player, METHOD method, char* body) {
+  if (method == POST) {
     if (strstr(body, "quit=") != NULL) {
-      if (!register_event(sockfd, cookie, players)) {
-        perror("register");
-        return false;
-      }
-      if (!quit_event(sockfd, players))
+      if (!quit_event(player))
         perror("gameover");
 
       return false;
     }
   }
+  else if (method == GET) {
+
+  }
   else {
     // never used, just for completeness
     fprintf(stderr, "no other methods supported");
+    return false;
   }
 
   return true;
@@ -141,106 +208,57 @@ bool extract_info(int sockfd, METHOD* method_p, char* url, char* content, char* 
   return true;
 }
 
-bool intro_event(int sockfd, struct Player* players) {
-  struct Player* player = get_player(sockfd, players);
-  char username_header[256] = "user=";
-  char username[256] = "\0";
+bool intro_event(struct Player* player) {
+  char username_header[256];
+  strcpy(username_header, player->username);
 
-  if (player != NULL) {
-    player->sockfd = sockfd;
-    player->status = UNREGISTER;
-    strcpy(username, player->username);
-  }
-  else {
-    if (!cant_play_event(sockfd, players)) {
-      perror("cant_play");
-      return false;
-    }
-    return true;
-  }
-
-  strcat(username_header, username);
-  if (!send_html_http(sockfd, "../resources/updated_html/1_intro.html", "user=", username_header, NULL, NULL)) {
+  if (!send_html_http(player->sockfd, "../resources/updated_html/1_intro.html", "user=", username_header, NULL, NULL)) {
     perror("send_html");
     return false;
   }
 
-  return true;
-}
-
-bool register_event(int sockfd, char* info, struct Player* players) {
-  struct Player* player = get_player(sockfd, players);
-  char* username = strstr(info, "user=") + 5;
-
-  // if nothing in the username, invalid and return to intro page
-  if (*username == '\0' || *username == '\r' || *username == '\n') {
-    if (!intro_event(sockfd, players)) {
-      return false;
-    }
-    return true;
-  }
-
-  if (player != NULL) {
-    strcpy(player->username, username);
-    player->sockfd = sockfd;
-  }
-  else {
-    if (!cant_play_event(sockfd, players)) {
-      perror("cant_play");
-      return false;
-    }
-  }
+  player->status = INTRO;
 
   return true;
 }
 
-bool start_event(int sockfd, struct Player* players) {
-  struct Player* player = get_player(sockfd, players);
-
-  if (player == NULL)
-    return false;
-
+bool start_event(struct Player* player){
   char username_body[256] = "<p>";
-  char username_header[256] = "user=";
-  char username[256];
+  char username_header[256];
+  char username[256] = "\0";
 
-  strcpy(username, player->username);
+  strcpy(username_header, player->username);
+
+  if (strstr(player->username, "user=") != NULL) {
+    char* username_start = strstr(player->username, "user=") + 5;
+    strcpy(username, username_start);
+  }
 
   strcat(username_body, username);
   strcat(username_body, "</p>");
-  strcat(username_header, username);
 
-  if (!send_html_http(sockfd, "../resources/updated_html/2_start.html", "user=", username_header, "<p></p>", username_body))
+  if (!send_html_http(player->sockfd, "../resources/updated_html/2_start.html", "user=", username_header, "<p></p>", username_body))
     return false;
+
+  player->status = START;
 
   return true;
 }
 
-bool quit_event(int sockfd, struct Player* players) {
-  struct Player* player = get_player(sockfd, players);
-  char username_header[256] = "user=";
-  char username[256] = "\0";
-  if (player != NULL)
-    strcpy(username, player->username);
+bool quit_event(struct Player* player) {
+  char username_header[256];
+  strcpy(username_header, player->username);
 
-  players_quit(players);
-
-  strcat(username_header, username);
-  if (!send_html_http(sockfd, "../resources/updated_html/7_gameover.html", "user=", username_header, NULL, NULL))
+  if (!send_html_http(player->sockfd, "../resources/updated_html/7_gameover.html", "user=", username_header, NULL, NULL))
     return false;
+
+  player->status = QUIT;
 
   return true;
 }
 
-bool cant_play_event(int sockfd, struct Player* players) {
-  struct Player* player = get_player(sockfd, players);
-  char username_header[256] = "user=";
-  char username[256] = "\0";
-  if (player != NULL)
-    strcpy(username, player->username);
-
-  strcat(username_header, username);
-  if (!send_html_http(sockfd, "../resources/updated_html/8_cant_join.html", "user=", username_header, NULL, NULL))
+bool cant_play_event(int sockfd, char* cookie) {
+  if (!send_html_http(sockfd, "../resources/updated_html/8_cant_join.html", "user=", cookie, NULL, NULL))
     return false;
 
   return true;

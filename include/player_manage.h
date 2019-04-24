@@ -21,10 +21,11 @@
 // represents the status of player
 typedef enum
 {
+    UNDEFINE,
     DISCONNECT,
-    UNREGISTER,
-    UNREADY,
-    READY,
+    INTRO,
+    START,
+    FIRST_TRUN,
     QUIT
 } PLAYER_STATUS;
 
@@ -38,6 +39,11 @@ struct Player {
   initialize a player
 */
 void init_player(struct Player* players);
+
+/*
+  set the information of player
+*/
+void set_player_info(struct Player* player, int sockfd, char* username, PLAYER_STATUS status);
 
 /*
   get a player from the players array based on a specific socket fd, NULL if nothing found
@@ -56,10 +62,5 @@ void players_quit(struct Player* players);
   get any disconnect player from the players array, NULL if nothing found
 */
 struct Player* get_disconnect_player(struct Player* players);
-
-/*
-  get any quit player from the players array, NULL if nothing found
-*/
-struct Player* get_quit_player(struct Player* players);
 
 #endif
