@@ -18,6 +18,8 @@
 #include <stdbool.h>
 
 #define NUM_PLAYER 2
+#define MAX_KEYWORD_ROUND 64
+#define MAX_INPUT_LEN 64
 
 // represents the status of player
 typedef enum
@@ -32,7 +34,8 @@ typedef enum
 
 struct Player {
   int sockfd;
-  char username[128];
+  char username[MAX_INPUT_LEN];
+  char keyword[MAX_KEYWORD_ROUND][MAX_INPUT_LEN];
   PLAYER_STATUS status;
 };
 
@@ -42,9 +45,24 @@ struct Player {
 void init_player(struct Player* players);
 
 /*
+  initialize keyword list of a player
+*/
+void init_keyword_list(struct Player* player);
+
+/*
   set the information of player
 */
 void set_player_info(struct Player* player, int sockfd, char* username, PLAYER_STATUS status);
+
+/*
+  add an keyword to player's keyword list
+*/
+bool add_keyword(struct Player* player, char* keyword);
+
+/*
+  store the print out version of all keywords in player's keyword list into buff
+*/
+void sprintf_keyword(struct Player* player, char* buff);
 
 /*
   get a player from the players array based on a specific socket fd, NULL if nothing found

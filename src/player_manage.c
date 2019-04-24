@@ -14,6 +14,12 @@
 
 void init_player(struct Player* player) {
   set_player_info(player, 1, "user=\0", DISCONNECT);
+  init_keyword_list(player);
+}
+
+void init_keyword_list(struct Player* player) {
+  for (int i = 0; i < MAX_KEYWORD_ROUND; i++)
+    *(player->keyword[i]) = '\0';
 }
 
 void set_player_info(struct Player* player, int sockfd, char* username, PLAYER_STATUS status) {
@@ -25,6 +31,35 @@ void set_player_info(struct Player* player, int sockfd, char* username, PLAYER_S
 
   if (status != UNDEFINE)
     player->status = status;
+}
+
+bool add_keyword(struct Player* player, char* keyword) {
+  for (int i = 0; i < MAX_KEYWORD_ROUND; i++) {
+    if (*(player->keyword[i]) == '\0') {
+      strcpy(player->keyword[i], keyword);
+      int len = strlen(keyword);
+      player->keyword[i][len] = '\0';
+      return true;
+    }
+  }
+
+  return false;
+}
+
+void sprintf_keyword(struct Player* player, char* buff) {
+  int len = 0;
+
+  for (int i = 0; i < MAX_KEYWORD_ROUND; i++) {
+    if (*(player->keyword[i]) == '\0')
+      break;
+
+    strcat(buff, player->keyword[i]);
+    strcat(buff, ", ");
+
+    len += strlen(player->keyword[i]) + 2;
+  }
+
+  buff[len] = '\0';
 }
 
 struct Player* get_player(int sockfd, struct Player* players) {

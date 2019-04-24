@@ -21,6 +21,8 @@
 #include "player_manage.h"
 #include "game_msg_manage.h"
 
+#define NUM_IMAGE 4
+
 /*
   process an event read from a specific socket
 */
@@ -68,7 +70,12 @@ bool start_event(struct Player* player);
 bool play_event(struct Player* player, int round_num);
 
 /*
-  discard player action when others not ready (not PLAY)
+  accept player input keyword
+*/
+bool accept_event(struct Player* player, char* body, int round_num);
+
+/*
+  discard player input keyword when others not ready (not PLAY)
 */
 bool discard_event(struct Player* player, int round_num);
 

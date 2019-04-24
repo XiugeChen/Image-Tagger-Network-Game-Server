@@ -70,7 +70,7 @@ bool send_400_http(int sockfd);
 /*
   send 200 http to client based on html address and any replacement in header and body
 */
-bool send_html_http(int sockfd, char* html_addr, char* header_replace_str, char* header_replacement, char* body_replace_str, char* body_replacement);
+bool send_html_http(int sockfd, char* html_addr, char* header_replace_str, char* header_replacement, char** body_replace_str, char** body_replacement, int num_body_rep);
 
 // HELPER FUNCTIONS
 /*
@@ -81,7 +81,7 @@ bool send_header_http(int sockfd, char* html_addr, char* header_replace_str, cha
 /*
   send the body of http with or without replacement
 */
-bool send_body_http(int sockfd, char* html_addr, char* body_replace_str, char* body_replacement);
+bool send_body_http(int sockfd, char* html_addr, char** body_replace_str, char** body_replacement, int num_body_rep);
 
 /*
   replace substring inside source with replacement

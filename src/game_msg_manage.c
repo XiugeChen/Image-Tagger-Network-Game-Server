@@ -95,7 +95,6 @@ void get_body_http(char* request, char* body) {
 }
 
 bool send_404_http(int sockfd) {
-  printf("send 404 to %d!\n", sockfd);
   if (write(sockfd, HTTP_404, HTTP_404_LENGTH) < 0) {
     perror("write");
     return false;
@@ -105,7 +104,6 @@ bool send_404_http(int sockfd) {
 }
 
 bool send_400_http(int sockfd) {
-  printf("send 400 to %d!\n", sockfd);
   if (write(sockfd, HTTP_400, HTTP_400_LENGTH) < 0) {
     perror("write");
     return false;
@@ -114,19 +112,19 @@ bool send_400_http(int sockfd) {
   return true;
 }
 
-bool send_html_http(int sockfd, char* html_addr, char* header_replace_str, char* header_replacement, char* body_replace_str, char* body_replacement) {
-  printf("send 200 to %d!\n", sockfd);
-
+bool send_html_http(int sockfd, char* html_addr, char* header_replace_str, char* header_replacement, char** body_replace_str, char** body_replacement, int num_body_rep) {
   int extra_len = 0;
 
-  if (body_replace_str != NULL && body_replacement != NULL)
-    extra_len = strlen(body_replacement) - strlen(body_replace_str);
+  if (body_replace_str != NULL && body_replacement != NULL && num_body_rep != 0) {
+    for (int i = 0; i < num_body_rep; i++)
+      extra_len += strlen(body_replacement[i]) - strlen(body_replace_str[i]);
+  }
 
   if (!send_header_http(sockfd, html_addr, header_replace_str, header_replacement, extra_len)){
     perror("send html header http");
     return false;
   }
-  if (!send_body_http(sockfd, html_addr, body_replace_str, body_replacement)) {
+  if (!send_body_http(sockfd, html_addr, body_replace_str, body_replacement, num_body_rep)) {
     perror("send html body http");
     return false;
   }
@@ -172,13 +170,13 @@ bool send_header_http(int sockfd, char* html_addr, char* header_replace_str, cha
   return true;
 }
 
-bool send_body_http(int sockfd, char* html_addr, char* body_replace_str, char* body_replacement) {
+bool send_body_http(int sockfd, char* html_addr, char** body_replace_str, char** body_replacement, int num_body_rep) {
   char buff[BUFFER_SIZE];
   struct stat st;
   int n = 0;
 
   // if there is no replacement, just send the html file (first header later body)
-  if (body_replace_str == NULL || body_replacement == NULL) {
+  if (body_replace_str == NULL || body_replacement == NULL || num_body_rep == 0) {
     // send the file
     int filefd = open(html_addr, O_RDONLY);
     do {
@@ -196,7 +194,9 @@ bool send_body_http(int sockfd, char* html_addr, char* body_replace_str, char* b
   else {
     // get the size of the file, and increase file size to accommodate the extra content
     stat(html_addr, &st);
-    int extra_length = strlen(body_replacement) - strlen(body_replace_str);
+    int extra_length = 0;
+    for (int i = 0; i < num_body_rep; i++)
+      extra_length += strlen(body_replacement[i]) - strlen(body_replace_str[i]);
     long size = st.st_size + extra_length;
 
     // read the content of the HTML file
@@ -211,8 +211,10 @@ bool send_body_http(int sockfd, char* html_addr, char* body_replace_str, char* b
 
     buff[size] = '\0';
 
-    if (!replace_str(buff, body_replace_str, body_replacement))
-      return false;
+    for (int i = 0; i < num_body_rep; i++) {
+      if (!replace_str(buff, body_replace_str[i], body_replacement[i]))
+        return false;
+    }
 
     if (write(sockfd, buff, size) < 0) {
         perror("write");

@@ -36,7 +36,7 @@ void run_http_server(char* server, int port) {
 
 void execute_server(int sockfd) {
   // each round is one picture (not the whole set of picture)
-  int round_num = 1;
+  int round_num = 0;
 
   // players of the game
   struct Player players[NUM_PLAYER];
