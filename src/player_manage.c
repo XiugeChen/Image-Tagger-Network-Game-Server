@@ -36,8 +36,9 @@ void set_player_info(struct Player* player, int sockfd, char* username, PLAYER_S
 bool add_keyword(struct Player* player, char* keyword) {
   for (int i = 0; i < MAX_KEYWORD_ROUND; i++) {
     if (*(player->keyword[i]) == '\0') {
-      strcpy(player->keyword[i], keyword);
       int len = strlen(keyword);
+      strcpy(player->keyword[i], keyword);
+
       player->keyword[i][len] = '\0';
       return true;
     }
@@ -59,7 +60,8 @@ void sprintf_keyword(struct Player* player, char* buff) {
     len += strlen(player->keyword[i]) + 2;
   }
 
-  buff[len] = '\0';
+  // eliminate the last two char ", "
+  buff[len - 2] = '\0';
 }
 
 struct Player* get_player(int sockfd, struct Player* players) {
@@ -79,6 +81,13 @@ void players_quit(struct Player* players) {
   }
 }
 
+void players_complete(struct Player* players) {
+  for (int i = 0; i < NUM_PLAYER; i++) {
+    if(players[i].status != QUIT && players[i].status != DISCONNECT)
+      players[i].status = COMPLETE;
+  }
+}
+
 bool all_players_play(struct Player* players) {
   for (int i = 0; i < NUM_PLAYER; i++) {
     if(players[i].status != PLAY)
@@ -86,6 +95,32 @@ bool all_players_play(struct Player* players) {
   }
 
   return true;
+}
+
+bool game_end(struct Player* players) {
+  if (all_players_play(players)) {
+    for (int i = 0; i < NUM_PLAYER; i++) {
+      for (int j = i + 1; j < NUM_PLAYER; j++) {
+        for (int i_key = 0; i_key < MAX_KEYWORD_ROUND; i_key++) {
+          for (int j_key = 0; j_key < MAX_KEYWORD_ROUND; j_key++) {
+            if (*(players[i].keyword[i_key]) == '\0' || *(players[j].keyword[j_key]) == '\0')
+              break;
+
+            // convert all keyword to lowercase
+            char keyword_i[MAX_INPUT_LEN];
+            all_to_lower(keyword_i, players[i].keyword[i_key]);
+            char keyword_j[MAX_INPUT_LEN];
+            all_to_lower(keyword_j, players[j].keyword[j_key]);
+
+            if (strcmp(keyword_i, keyword_j) == 0)
+              return true;
+          }
+        }
+      }
+    }
+  }
+
+  return false;
 }
 
 struct Player* get_disconnect_player(struct Player* players) {
@@ -96,4 +131,13 @@ struct Player* get_disconnect_player(struct Player* players) {
   }
 
   return NULL;
+}
+
+void all_to_lower(char* new, char* origin) {
+  int len = strlen(origin);
+
+  for (int n = 0; n < len; n++)
+    new[n] = tolower(origin[n]);
+
+  new[len] = '\0';
 }

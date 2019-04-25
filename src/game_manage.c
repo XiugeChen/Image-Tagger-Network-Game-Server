@@ -26,15 +26,6 @@ bool process_event(struct Player* players, int sockfd, int* round_num) {
   if(!extract_info(sockfd, &method, url, body, cookie))
     return false;
 
-  printf("\nround: %d\n", *round_num);
-  printf("cookie: %s\n", cookie);
-  printf("url: %s\n", url);
-  printf("body: %s\n", body);
-  if (method == GET)
-    printf("GET\n");
-  else if (method == POST)
-    printf("POST\n");
-
   // ignore the request about favicon.ico
   if (method == GET && strcmp(url, "favicon.ico") == 0) {
     if (!send_404_http(sockfd)) {
@@ -56,46 +47,47 @@ bool process_event(struct Player* players, int sockfd, int* round_num) {
     switch(player->status) {
       // check whether player should quit game (gameover event), if so, send gameover page and close connection
       case QUIT:
-        quit_event(player);
-        players_quit(players);
+        all_quit(players, player);
         return false;
 
       case DISCONNECT:
         if (!process_player_discon(player, method, url, cookie)) {
-          quit_event(player);
-          players_quit(players);
+          all_quit(players, player);
           return false;
         }
         break;
 
       case INTRO:
         if (!process_player_intro(player, method, body)) {
-          quit_event(player);
-          players_quit(players);
+          all_quit(players, player);
           return false;
         }
         break;
 
       case START:
         if (!process_player_start(player, method, body, url, *round_num)) {
-          quit_event(player);
-          players_quit(players);
+          all_quit(players, player);
           return false;
         }
         break;
 
       case PLAY:
-        if (!process_player_play(player, method, body, *round_num, all_players_play(players))) {
-          quit_event(player);
-          players_quit(players);
+        if (!process_player_play(player, method, body, round_num, players)) {
+          all_quit(players, player);
+          return false;
+        }
+        break;
+
+      case COMPLETE:
+        if (!process_player_complete(player, method, body, url, *round_num)) {
+          all_quit(players, player);
           return false;
         }
         break;
 
       default:
         perror("player status");
-        quit_event(player);
-        players_quit(players);
+        all_quit(players, player);
         return false;
     }
   }
@@ -194,7 +186,7 @@ bool process_player_start(struct Player* player, METHOD method, char* body, char
   return true;
 }
 
-bool process_player_play(struct Player* player, METHOD method, char* body, int round_num, bool all_players_play) {
+bool process_player_play(struct Player* player, METHOD method, char* body, int* round_num, struct Player* players) {
   // when player at the play page, server only respond to POST keyword and quit
   if (method == POST) {
     // quit game
@@ -203,13 +195,13 @@ bool process_player_play(struct Player* player, METHOD method, char* body, int r
       return false;
     }
     else if (strstr(body, "keyword=") != NULL) {
-      if (all_players_play) {
-        if (!accept_event(player, body, round_num))
+      if (all_players_play(players)) {
+        if (!accept_event(player, body, round_num, players))
           return false;
       }
       // else discard
       else{
-        if (!discard_event(player, round_num))
+        if (!discard_event(player, *round_num))
           return false;
       }
     }
@@ -218,6 +210,42 @@ bool process_player_play(struct Player* player, METHOD method, char* body, int r
   }
   else if (method == GET)
     return false;
+  else {
+    // never used, just for completeness
+    fprintf(stderr, "no other methods supported");
+    return false;
+  }
+
+  return true;
+}
+
+bool process_player_complete(struct Player* player, METHOD method, char* body, char* url, int round_num) {
+  // when player is at complete page, server will respond to start GET request, quit POST request
+  // and keyword POST request (send end game page)
+  // quit
+  if (method == POST) {
+    if (strcmp(body, "quit=Quit") == 0) {
+      quit_event(player);
+      return false;
+    }
+    else if (strstr(body, "keyword=") != NULL) {
+      if (!endgame_event(player))
+        return false;
+
+      return true;
+    }
+    else
+      return false;
+  }
+  // start playing
+  else if (method == GET) {
+    if (strcmp(url, "?start=Start") == 0) {
+      if (!play_event(player, round_num))
+        return false;
+    }
+    else
+      return false;
+  }
   else {
     // never used, just for completeness
     fprintf(stderr, "no other methods supported");
@@ -332,19 +360,7 @@ bool play_event(struct Player* player, int round_num) {
   return true;
 }
 
-bool accept_event(struct Player* player, char* body, int round_num) {
-  // create header cookie replacement
-  char username_header[MAX_INPUT_LEN];
-  strcpy(username_header, player->username);
-
-  // get the number of image
-  char image_num[4];
-  sprintf(image_num, "%d", round_num % NUM_IMAGE + 1);
-  // create image number body replacement
-  char image_replace[16] = "image-";
-  char image_origin[16] = "image-2";
-  strcat(image_replace, image_num);
-
+bool accept_event(struct Player* player, char* body, int* round_num, struct Player* players) {
   char keyword[MAX_INPUT_LEN];
   // extract keyword from body
   char* start = strstr(body, "keyword=") + 8;
@@ -358,6 +374,29 @@ bool accept_event(struct Player* player, char* body, int round_num) {
     keyword[i] = *(start + i);
 
   add_keyword(player, keyword);
+
+  // check if game ends, if so, send endgame page
+  if (game_end(players)) {
+    if (!endgame_event(player))
+      return false;
+
+    players_complete(players);
+    (*round_num)++;
+    return true;
+  }
+
+  // if game not end, continue to accpet keyword and display all accepted keywords
+  // create header cookie replacement
+  char username_header[MAX_INPUT_LEN];
+  strcpy(username_header, player->username);
+
+  // get the number of image
+  char image_num[4];
+  sprintf(image_num, "%d", *round_num % NUM_IMAGE + 1);
+  // create image number body replacement
+  char image_replace[16] = "image-";
+  char image_origin[16] = "image-2";
+  strcat(image_replace, image_num);
 
   // get all keyword has inputed by player this round and display on page
   // create image number body replacement
@@ -407,17 +446,34 @@ bool discard_event(struct Player* player, int round_num) {
   return true;
 }
 
-bool quit_event(struct Player* player) {
+bool endgame_event(struct Player* player) {
   // create header cookie replacement
   char username_header[MAX_INPUT_LEN];
   strcpy(username_header, player->username);
 
-  if (!send_html_http(player->sockfd, "../resources/updated_html/7_gameover.html", "user=", username_header, NULL, NULL, 0))
+  if (!send_html_http(player->sockfd, "../resources/updated_html/6_endgame.html", "user=", username_header, NULL, NULL, 0))
     return false;
 
-  player->status = QUIT;
+  init_keyword_list(player);
+
+  player->status = COMPLETE;
 
   return true;
+}
+
+void all_quit(struct Player* players, struct Player* player) {
+  quit_event(player);
+  players_quit(players);
+}
+
+void quit_event(struct Player* player) {
+  // create header cookie replacement
+  char username_header[MAX_INPUT_LEN];
+  strcpy(username_header, player->username);
+
+  send_html_http(player->sockfd, "../resources/updated_html/7_gameover.html", "user=", username_header, NULL, NULL, 0);
+
+  player->status = QUIT;
 }
 
 bool cant_play_event(int sockfd, char* cookie) {

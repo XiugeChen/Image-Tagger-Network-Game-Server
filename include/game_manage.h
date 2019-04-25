@@ -47,7 +47,12 @@ bool process_player_start(struct Player* player, METHOD method, char* body, char
 /*
   transition rules when player is at play page
 */
-bool process_player_play(struct Player* player, METHOD method, char* body, int round_num, bool all_players_play);
+bool process_player_play(struct Player* player, METHOD method, char* body, int* round_num, struct Player* players);
+
+/*
+  transition rules when player is at complete(end game) page
+*/
+bool process_player_complete(struct Player* player, METHOD method, char* body, char* url, int round_num);
 
 /*
   extract game event based on read content from client
@@ -72,7 +77,7 @@ bool play_event(struct Player* player, int round_num);
 /*
   accept player input keyword
 */
-bool accept_event(struct Player* player, char* body, int round_num);
+bool accept_event(struct Player* player, char* body, int* round_num, struct Player* players);
 
 /*
   discard player input keyword when others not ready (not PLAY)
@@ -80,9 +85,19 @@ bool accept_event(struct Player* player, char* body, int round_num);
 bool discard_event(struct Player* player, int round_num);
 
 /*
+  reach the end of one game when players have inputed same keyword
+*/
+bool endgame_event(struct Player* player);
+
+/*
+  player quit, making others players quit as well
+*/
+void all_quit(struct Player* players, struct Player* player);
+
+/*
   player quit, gameover page display
 */
-bool quit_event(struct Player* player);
+void quit_event(struct Player* player);
 
 /*
   cant play(join game) page display

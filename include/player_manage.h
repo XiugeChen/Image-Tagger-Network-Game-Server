@@ -16,9 +16,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include <ctype.h>
 
 #define NUM_PLAYER 2
-#define MAX_KEYWORD_ROUND 64
+#define MAX_KEYWORD_ROUND 256
 #define MAX_INPUT_LEN 64
 
 // represents the status of player
@@ -29,6 +30,7 @@ typedef enum
     INTRO,
     START,
     PLAY,
+    COMPLETE,
     QUIT
 } PLAYER_STATUS;
 
@@ -77,14 +79,29 @@ struct Player* get_player(int sockfd, struct Player* players);
 void players_quit(struct Player* players);
 
 /*
+  once one player complete the game, also make all other players complete
+*/
+void players_complete(struct Player* players);
+
+/*
   check whether all players are ready to play
 */
 bool all_players_play(struct Player* players);
+
+/*
+  check whether players reach the end of one game (there is common keyword in their keyword list)
+*/
+bool game_end(struct Player* players);
 
 // HELPER FUNCTION
 /*
   get any disconnect player from the players array, NULL if nothing found
 */
 struct Player* get_disconnect_player(struct Player* players);
+
+/*
+  convert all char in origin into lowercase and store in new
+*/
+void all_to_lower(char* new, char* origin);
 
 #endif
