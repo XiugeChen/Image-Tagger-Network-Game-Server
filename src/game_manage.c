@@ -316,9 +316,9 @@ bool start_event(struct Player* player) {
 
   // create username replacement in body
   char username_holder[MAX_INPUT_LEN] = "<form";
-  char username_replace[MAX_INPUT_LEN];
-  strcpy(username_replace, username);
-  strcat(username_replace, "<form");
+  char username_replace[MAX_INPUT_LEN] = "\n\n<p>";
+  strcat(username_replace, username);
+  strcat(username_replace, "</p>\n\n<form");
 
   // assemble all body replacement into 2D array
   char* body_origin[1];
