@@ -28,7 +28,7 @@ To compile:
 
 To execute after compile:
 
-`cd code/bin`
+`cd bin`
 
 `./image_tagger <server_ip> <port_number>`
 
