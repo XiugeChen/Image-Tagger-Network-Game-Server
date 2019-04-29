@@ -24,8 +24,6 @@ For detailed description please look at resources/project_description.pdf
 
 To compile:
 
-`cd code`
-
 `make all`
 
 To execute after compile:
@@ -35,8 +33,6 @@ To execute after compile:
 `./image_tagger <server_ip> <port_number>`
 
 To clean up executable and object files and directories:
-
-`cd code`
 
 `make clean`
 
