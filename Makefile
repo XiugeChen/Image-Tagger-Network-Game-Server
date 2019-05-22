@@ -15,10 +15,10 @@ OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 $(ODIR)/%.o: $(SDIR)/%.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
+all: mkdirs image_tagger
+
 image_tagger: $(OBJ)
 	$(CC) -o $(BIN_DIR)/$@ $^ $(CFLAGS)
-
-all: mkdirs image_tagger
 
 .PHONY: clean
 
